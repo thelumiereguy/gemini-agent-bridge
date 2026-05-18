@@ -1,0 +1,42 @@
+{
+  "name": "@thelumiereguy/gemini-agent-bridge",
+  "version": "1.0.0",
+  "description": "Gemini CLI sidecar bridge for coding agents",
+  "main": "dist/cli/index.js",
+  "bin": {
+    "gemini-agent-bridge": "dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "chmod +x dist/cli/index.js",
+    "prepack": "npm run build",
+    "start": "ts-node src/cli/index.ts",
+    "test": "npm run build && tsc -p tsconfig.test.json && node --test --require ts-node/register test/*.test.ts",
+    "coverage": "npm run build && tsc -p tsconfig.test.json && node --test --experimental-test-coverage --test-coverage-include=src/**/*.ts --require ts-node/register test/*.test.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thelumiereguy/gemini-agent-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thelumiereguy/gemini-agent-bridge/issues"
+  },
+  "homepage": "https://github.com/thelumiereguy/gemini-agent-bridge#readme",
+  "keywords": ["gemini", "bridge", "agent", "cli", "claude", "codex"],
+  "author": "thelumiereguy",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "20.19.41",
+    "ts-node": "10.9.2",
+    "typescript": "6.0.3"
+  }
+}
