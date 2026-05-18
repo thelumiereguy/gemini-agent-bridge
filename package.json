@@ -18,7 +18,7 @@
     "prepack": "npm run build",
     "start": "ts-node src/cli/index.ts",
     "test": "npm run build && tsc -p tsconfig.test.json && node --test --require ts-node/register test/*.test.ts",
-    "coverage": "npm run build && tsc -p tsconfig.test.json && node --test --experimental-test-coverage --test-coverage-include=src/**/*.ts --require ts-node/register test/*.test.ts"
+    "coverage": "npm run build && tsc -p tsconfig.test.json && node --test --experimental-test-coverage --require ts-node/register test/*.test.ts"
   },
   "repository": {
     "type": "git",
