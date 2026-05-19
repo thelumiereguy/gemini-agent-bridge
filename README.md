@@ -1,4 +1,4 @@
-# gemini-agent-bridge
+# Gemini Agent Bridge
 
 Gemini CLI sidecar bridge for coding agents (Claude Code, Codex, etc.).
 
