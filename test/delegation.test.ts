@@ -88,14 +88,44 @@ test('uses the most specific matching tool override', () => {
   assert.deepEqual(result, { should: true });
 });
 
+test('matches Atlassian and Figma tool overrides by substring', () => {
+  const atlassian = shouldDelegate(configWith(), {
+    command: 'mcp__atlassian__getConfluencePage(...)',
+    output: 'x'.repeat(2000),
+  });
+
+  const figma = shouldDelegate(configWith(), {
+    command: 'figma_get_file(...)',
+    output: 'x'.repeat(5000),
+  });
+
+  assert.deepEqual(atlassian, { should: true });
+  assert.deepEqual(figma, { should: true });
+});
+
 test('does not delegate excluded path commands', () => {
   const result = shouldDelegate(configWith(), {
-    command: 'cat node_modules/typescript/package.json',
+    command: 'cat .env',
     output: 'x'.repeat(100_000),
   });
 
   assert.equal(result.should, false);
   assert.equal(result.reason, 'Command targets an excluded path pattern');
+});
+
+test('delegates generated and dependency output when thresholds are met', () => {
+  for (const command of [
+    'cat node_modules/typescript/package.json',
+    'cat build/output.js',
+    'cat dist/index.js',
+  ]) {
+    const result = shouldDelegate(configWith(), {
+      command,
+      output: 'x'.repeat(DEFAULT_CONFIG.delegate.min_chars),
+    });
+
+    assert.deepEqual(result, { should: true });
+  }
 });
 
 test('does not delegate output over the hard maximum', () => {
@@ -125,4 +155,3 @@ test('delegates broad search commands with substantial output below default thre
   assert.equal(result.should, true);
   assert.equal(result.reason, 'Broad search with substantial output');
 });
-

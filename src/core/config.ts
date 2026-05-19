@@ -56,6 +56,8 @@ export const DEFAULT_CONFIG: Config = {
       'Grep': { min_chars: 5000, min_files: 2 },
       'Glob': { min_chars: 5000, min_files: 2 },
       'LS': { min_chars: 5000, min_files: 2 },
+      'atlassian': { min_chars: 2000 },
+      'figma': { min_chars: 5000 },
       'mcp__': { min_chars: 5000 }
     }
   },
@@ -65,9 +67,6 @@ export const DEFAULT_CONFIG: Config = {
     '**/*.pem',
     '**/*.key',
     '**/.git/**',
-    '**/node_modules/**',
-    '**/build/**',
-    '**/dist/**',
   ],
   metrics: {
     enabled: true,
@@ -79,40 +78,6 @@ export function loadConfig(): Config {
 
   config = mergeConfig(config, loadFileConfig(GLOBAL_CONFIG_FILE));
   config = mergeConfig(config, loadFileConfig(PROJECT_CONFIG_FILE));
-
-  if (process.env.GEMINI_BRIDGE_CONFIG) {
-    try {
-      log('Loading GEMINI_BRIDGE_CONFIG from env');
-      const envConfig = JSON.parse(process.env.GEMINI_BRIDGE_CONFIG);
-      config = mergeConfig(config, envConfig);
-    } catch (error) {
-      log(`Error parsing GEMINI_BRIDGE_CONFIG: ${error}`);
-    }
-  }
-
-  if (process.env.GEMINI_BRIDGE_MIN_CHARS) {
-    const parsed = parseInt(process.env.GEMINI_BRIDGE_MIN_CHARS, 10);
-    if (!isNaN(parsed)) {
-      log(`Overriding min_chars from env: ${parsed}`);
-      config.delegate.min_chars = parsed;
-    } else {
-      log(`Invalid GEMINI_BRIDGE_MIN_CHARS value: ${process.env.GEMINI_BRIDGE_MIN_CHARS}`);
-    }
-  }
-
-  if (process.env.GEMINI_BRIDGE_TOOL_OVERRIDES) {
-    try {
-      log('Loading GEMINI_BRIDGE_TOOL_OVERRIDES from env');
-      const overrides = JSON.parse(process.env.GEMINI_BRIDGE_TOOL_OVERRIDES);
-      config.delegate.tool_overrides = {
-        ...config.delegate.tool_overrides,
-        ...overrides
-      };
-      log(`Active overrides: ${Object.keys(config.delegate.tool_overrides || {}).join(', ')}`);
-    } catch (error) {
-      log(`Error parsing GEMINI_BRIDGE_TOOL_OVERRIDES: ${error}`);
-    }
-  }
 
   return config;
 }

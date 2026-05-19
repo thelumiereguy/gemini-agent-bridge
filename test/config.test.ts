@@ -30,7 +30,12 @@ function withEnv(values: Partial<Record<(typeof envKeys)[number], string>>, fn: 
   }
 }
 
-test('loads nested config from GEMINI_BRIDGE_CONFIG', () => {
+test('GEMINI_BRIDGE_CONFIG is ignored', () => {
+  let baseline = loadConfig();
+  withEnv({}, () => {
+    baseline = loadConfig();
+  });
+
   withEnv(
     {
       GEMINI_BRIDGE_CONFIG: JSON.stringify({
@@ -56,30 +61,28 @@ test('loads nested config from GEMINI_BRIDGE_CONFIG', () => {
       }),
     },
     () => {
-      const config = loadConfig();
-
-      assert.equal(config.enabled, false);
-      assert.equal(config.gemini.command, 'gemini-test');
-      assert.equal(config.gemini.timeout_ms, 1234);
-      assert.deepEqual(config.gemini.env, { FOO: 'bar' });
-      assert.equal(config.delegate.min_files, 9);
-      assert.equal(config.delegate.tool_overrides?.CustomTool?.min_chars, 42);
-      assert.equal(config.metrics.enabled, false);
+      assert.deepEqual(loadConfig(), baseline);
     },
   );
 });
 
-test('GEMINI_BRIDGE_MIN_CHARS overrides parsed numeric values only', () => {
-  withEnv({ GEMINI_BRIDGE_MIN_CHARS: '123' }, () => {
-    assert.equal(loadConfig().delegate.min_chars, 123);
+test('GEMINI_BRIDGE_MIN_CHARS is ignored', () => {
+  let baseline = loadConfig();
+  withEnv({}, () => {
+    baseline = loadConfig();
   });
 
-  withEnv({ GEMINI_BRIDGE_MIN_CHARS: 'not-a-number' }, () => {
-    assert.equal(loadConfig().delegate.min_chars, 25_000);
+  withEnv({ GEMINI_BRIDGE_MIN_CHARS: '123' }, () => {
+    assert.deepEqual(loadConfig(), baseline);
   });
 });
 
-test('GEMINI_BRIDGE_TOOL_OVERRIDES merges with defaults', () => {
+test('GEMINI_BRIDGE_TOOL_OVERRIDES is ignored', () => {
+  let baseline = loadConfig();
+  withEnv({}, () => {
+    baseline = loadConfig();
+  });
+
   withEnv(
     {
       GEMINI_BRIDGE_TOOL_OVERRIDES: JSON.stringify({
@@ -88,13 +91,7 @@ test('GEMINI_BRIDGE_TOOL_OVERRIDES merges with defaults', () => {
       }),
     },
     () => {
-      const overrides = loadConfig().delegate.tool_overrides;
-
-      assert.equal(overrides?.Grep?.min_chars, 99);
-      assert.equal(overrides?.Grep?.min_files, 1);
-      assert.equal(overrides?.NewTool?.min_chars, 1000);
-      assert.equal(overrides?.Glob?.min_chars, 5000);
+      assert.deepEqual(loadConfig(), baseline);
     },
   );
 });
-
