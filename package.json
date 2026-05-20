@@ -1,6 +1,6 @@
 {
   "name": "@thelumiereguy/gemini-agent-bridge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gemini CLI sidecar bridge for coding agents",
   "main": "dist/cli/index.js",
   "bin": {
@@ -28,7 +28,14 @@
     "url": "https://github.com/thelumiereguy/gemini-agent-bridge/issues"
   },
   "homepage": "https://github.com/thelumiereguy/gemini-agent-bridge#readme",
-  "keywords": ["gemini", "bridge", "agent", "cli", "claude", "codex"],
+  "keywords": [
+    "gemini",
+    "bridge",
+    "agent",
+    "cli",
+    "claude",
+    "codex"
+  ],
   "author": "thelumiereguy",
   "license": "MIT",
   "publishConfig": {

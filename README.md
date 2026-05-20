@@ -144,6 +144,27 @@ All fields are optional — only include what you want to override. Full config 
 
 Dependency and generated output directories such as `node_modules`, `build`, and `dist` are not excluded by default. If Claude or Codex already produced that output, the bridge can usually save tokens by summarizing it before returning it to the agent. Use `max_chars` to skip outputs that are too large to summarize reliably.
 
+### Gemini child process environment
+
+The bridge does not forward your full shell environment to Gemini. The Gemini child process receives only:
+
+- a fixed minimal `PATH` so npm-installed CLIs can start
+- `GOOGLE_CLOUD_PROJECT`, if set
+- `GOOGLE_CLOUD_PROJECT_ID`, if set
+
+Other environment variables, including unrelated API keys and tokens, are not passed through by default.
+
+Make sure these project variables point at the Google Cloud project you use for Gemini CLI. `gemini --version` can pass even when prompt execution fails, because version checks do not require a working project or API access. If another tool sets `GOOGLE_CLOUD_PROJECT_ID` to a project without Gemini/Cloud AI Companion access, bridge delegations can fail even though `doctor` reports the Gemini binary as healthy.
+
+If you need to force a different project for the bridge, point `gemini.command` at a small wrapper script:
+
+```sh
+#!/bin/sh
+unset GOOGLE_CLOUD_PROJECT_ID
+export GOOGLE_CLOUD_PROJECT=your-gemini-project-id
+exec /path/to/gemini "$@"
+```
+
 ## `doctor` output explained
 
 ```
@@ -218,11 +239,16 @@ Gemini Agent Bridge - Recent Delegations
 - Lower `delegate.min_chars` in `~/.gemini-agent-bridge/config.json` or `.gemini-agent-bridge.json`.
 
 **`gemini: command not found` in hook**
-- The hook inherits a limited PATH. Either set the full path in `gemini.command` in a config file, or ensure the Gemini CLI is installed in a standard location (`/usr/local/bin`, `/usr/bin`).
+- The hook uses a limited PATH. Either set the full path in `gemini.command` in a config file, or ensure the Gemini CLI is installed in a standard location (`/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`, or `/bin`).
 
 **Hook exits silently with no effect**
 - Check logs: `tail -f $(gemini-agent-bridge logs | awk '{print $NF}')`
 - The hook always exits 0 and writes `{}` on error to avoid breaking the agent.
+
+**`doctor` passes but every delegation shows `Gemini: failed`**
+- Run a real prompt check: `printf 'hello\n' | gemini --skip-trust --approval-mode plan -p 'Return exactly: ok'`.
+- Check that `GOOGLE_CLOUD_PROJECT` / `GOOGLE_CLOUD_PROJECT_ID` point at the project you use for Gemini CLI.
+- If another workflow sets one of those variables to a non-Gemini project, use a wrapper script and set `gemini.command` to that wrapper.
 
 **Outputs are too large and Gemini times out**
 - Increase `gemini.timeout_ms` in a config file (default: 90000ms).

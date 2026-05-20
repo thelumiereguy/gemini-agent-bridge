@@ -9,6 +9,21 @@ export interface GeminiResult {
   error?: string;
 }
 
+function buildGeminiEnv(parentEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',
+  };
+
+  for (const key of ['GOOGLE_CLOUD_PROJECT', 'GOOGLE_CLOUD_PROJECT_ID']) {
+    const value = parentEnv[key];
+    if (value !== undefined) {
+      env[key] = value;
+    }
+  }
+
+  return env;
+}
+
 export async function runGemini(config: Config, prompt: string, input: string): Promise<GeminiResult> {
   const start = Date.now();
   
@@ -59,10 +74,7 @@ TOOL OUTPUT FOLLOWS:
     // --approval-mode plan: prevents Gemini from attempting to run tools
     const child = spawn(config.gemini.command, ['--skip-trust', '--approval-mode', 'plan', '-p', systemPrompt], {
       timeout: config.gemini.timeout_ms,
-      env: {
-        ...process.env,
-        ...(config.gemini.env || {}),
-      },
+      env: buildGeminiEnv(process.env),
     });
 
     let stdout = '';

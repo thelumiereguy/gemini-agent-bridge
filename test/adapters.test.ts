@@ -78,7 +78,11 @@ test('claude hook returns original output when delegation is skipped', async () 
     output: 'short',
   });
 
-  assert.equal(result, 'short');
+  assert.deepEqual(result, {
+    output: 'short',
+    delegated: false,
+    failed: false,
+  });
 });
 
 test('claude hook returns Gemini summary after redacting output', async () => {
@@ -101,10 +105,40 @@ test('claude hook returns Gemini summary after redacting output', async () => {
       output: 'token=abcdefghijklmnopqrstuvwxyz\n' + 'a'.repeat(100),
     });
 
-    assert.equal(result, 'claude summary');
+    assert.deepEqual(result, {
+      output: 'claude summary',
+      delegated: true,
+      failed: false,
+    });
     assert.match(receivedInput, /token=\[REDACTED\]/);
   } finally {
     gemini.runGemini = originalRunGemini;
   }
 });
 
+test('claude hook marks Gemini failures without changing output', async () => {
+  const gemini = require('../src/core/gemini') as typeof import('../src/core/gemini');
+  const originalRunGemini = gemini.runGemini;
+  gemini.runGemini = async () => ({
+    summary: '',
+    duration_ms: 5,
+    success: false,
+    error: 'missing project',
+  });
+
+  try {
+    const { handleClaudeHook } = require('../src/adapters/claude') as typeof import('../src/adapters/claude');
+    const result = await handleClaudeHook(configWith(), {
+      command: 'rg "needle"',
+      output: 'a'.repeat(100),
+    });
+
+    assert.deepEqual(result, {
+      output: 'a'.repeat(100),
+      delegated: false,
+      failed: true,
+    });
+  } finally {
+    gemini.runGemini = originalRunGemini;
+  }
+});

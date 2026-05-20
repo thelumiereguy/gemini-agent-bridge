@@ -84,16 +84,18 @@ async function claudeHook(config: Config) {
 
     const result = await handleClaudeHook(config, { ...data, command, output, fileCount });
 
-    if (result !== output) {
+    if (result.delegated) {
       log(`Delegation successful for ${toolName}. Returning replacement output.`);
 
       let updatedToolOutput: any;
       if (toolResponse && typeof toolResponse.content === 'string') {
-        updatedToolOutput = { ...toolResponse, content: result };
+        updatedToolOutput = { ...toolResponse, content: result.output };
       } else if (typeof toolResponse === 'object' && toolResponse !== null && 'stdout' in toolResponse) {
-        updatedToolOutput = { ...toolResponse, stdout: result };
+        updatedToolOutput = { ...toolResponse, stdout: result.output };
+      } else if (typeof toolResponse === 'object' && toolResponse !== null && 'output' in toolResponse) {
+        updatedToolOutput = { ...toolResponse, output: result.output };
       } else {
-        updatedToolOutput = result;
+        updatedToolOutput = result.output;
       }
 
       const response = {
@@ -104,6 +106,11 @@ async function claudeHook(config: Config) {
         systemMessage: "✨ Large output summarized by Gemini Sidecar."
       };
 
+      process.stdout.write(JSON.stringify(response) + '\n');
+    } else if (result.failed) {
+      const response = {
+        systemMessage: "⚠️ Gemini Sidecar could not summarize this output. Original tool output was left unchanged."
+      };
       process.stdout.write(JSON.stringify(response) + '\n');
     } else {
       process.stdout.write(JSON.stringify({}) + '\n');

@@ -12,7 +12,13 @@ export interface ClaudeHookInput {
   fileCount?: number;
 }
 
-export async function handleClaudeHook(config: Config, input: ClaudeHookInput): Promise<string> {
+export interface ClaudeHookResult {
+  output: string;
+  delegated: boolean;
+  failed: boolean;
+}
+
+export async function handleClaudeHook(config: Config, input: ClaudeHookInput): Promise<ClaudeHookResult> {
   const delegation = shouldDelegate(config, {
     command: input.command,
     output: input.output,
@@ -20,7 +26,7 @@ export async function handleClaudeHook(config: Config, input: ClaudeHookInput): 
   });
 
   if (!delegation.should) {
-    return input.output;
+    return { output: input.output, delegated: false, failed: false };
   }
 
   const redactedOutput = redact(input.output);
@@ -46,10 +52,11 @@ export async function handleClaudeHook(config: Config, input: ClaudeHookInput): 
   if (geminiResult.success) {
     if (geminiResult.summary.length > input.output.length) {
       log(`[Claude] Summary (${geminiResult.summary.length}) is larger than original (${input.output.length}). Falling back to original.`);
-      return input.output;
+      return { output: input.output, delegated: false, failed: false };
     }
-    return geminiResult.summary;
+    return { output: geminiResult.summary, delegated: true, failed: false };
   } else {
-    return input.output;
+    log(`[Claude] Gemini delegation failed: ${geminiResult.error}`);
+    return { output: input.output, delegated: false, failed: true };
   }
 }

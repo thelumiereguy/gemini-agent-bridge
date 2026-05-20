@@ -27,7 +27,6 @@ export interface Config {
   gemini: {
     command: string;
     timeout_ms: number;
-    env?: Record<string, string>;
   };
   delegate: {
     min_chars: number;
@@ -46,7 +45,6 @@ export const DEFAULT_CONFIG: Config = {
   gemini: {
     command: 'gemini',
     timeout_ms: 90000,
-    env: {},
   },
   delegate: {
     min_chars: 25000,

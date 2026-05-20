@@ -53,3 +53,61 @@ test('runGemini returns stderr for failed processes', async () => {
   assert.equal(result.error, 'bad command');
 });
 
+test('runGemini forwards only the minimal Gemini child environment', async () => {
+  const command = executable(`#!/bin/sh
+cat >/dev/null
+printf "project=%s\\n" "\${GOOGLE_CLOUD_PROJECT-unset}"
+printf "project_id=%s\\n" "\${GOOGLE_CLOUD_PROJECT_ID-unset}"
+printf "path=%s\\n" "\${PATH-unset}"
+printf "secret_present=%s\\n" "\${GEMINI_BRIDGE_SECRET+x}"
+`);
+
+  const previousProject = process.env.GOOGLE_CLOUD_PROJECT;
+  const previousProjectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+  const previousSecret = process.env.GEMINI_BRIDGE_SECRET;
+
+  try {
+    process.env.GOOGLE_CLOUD_PROJECT = 'primary-project';
+    process.env.GOOGLE_CLOUD_PROJECT_ID = 'fallback-project';
+    process.env.GEMINI_BRIDGE_SECRET = 'do-not-forward';
+
+    const result = await runGemini(
+      {
+        ...DEFAULT_CONFIG,
+        gemini: {
+          ...DEFAULT_CONFIG.gemini,
+          command,
+          timeout_ms: 1000,
+        },
+      },
+      'summarize',
+      'raw output',
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(result.summary, [
+      'project=primary-project',
+      'project_id=fallback-project',
+      'path=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',
+      'secret_present=',
+    ].join('\n'));
+  } finally {
+    if (previousProject === undefined) {
+      delete process.env.GOOGLE_CLOUD_PROJECT;
+    } else {
+      process.env.GOOGLE_CLOUD_PROJECT = previousProject;
+    }
+
+    if (previousProjectId === undefined) {
+      delete process.env.GOOGLE_CLOUD_PROJECT_ID;
+    } else {
+      process.env.GOOGLE_CLOUD_PROJECT_ID = previousProjectId;
+    }
+
+    if (previousSecret === undefined) {
+      delete process.env.GEMINI_BRIDGE_SECRET;
+    } else {
+      process.env.GEMINI_BRIDGE_SECRET = previousSecret;
+    }
+  }
+});
